@@ -41,7 +41,7 @@ namespace Configurations
                         DB = new SqliteConnection(string.Format
                         (
                             "uri=file://{0},Version=3",
-                            Path.Combine(TShock.SavePath, "Delimiter.sqlite")
+                            Path.Combine(TShock.SavePath, "Configurations.sqlite")
                         ));
                         break;
                     }
@@ -80,9 +80,10 @@ namespace Configurations
                 new SqlColumn("TileBan", MySqlDbType.Int32),
                 new SqlColumn("Type", MySqlDbType.Int32)));
         }
+        public static void Dispose() => DB.Dispose();
 
         public static void LoadConfiguration()
-        {
+        { try {
             using (QueryResult plugins = DB.QueryReader("SELECT * FROM RemovedPlugins WHERE WorldID=@0;", Main.worldID))
             {
                 List<string> Plugins = new List<string>();
@@ -163,6 +164,6 @@ namespace Configurations
                     { TShock.TileBans.TileBans.Add(new TileBan(Tile)); }
                 }
             }
-        }
+        } catch { } }
     }
 }

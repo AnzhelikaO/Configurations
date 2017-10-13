@@ -9,7 +9,7 @@ namespace Configurations
     public class Configurations : TerrariaPlugin
     {
         public override string Author => "Anzhelika";
-        public override string Name => "Delimiter";
+        public override string Name => "Configurations";
         public override string Description => "Separate group permissions, item/tile/projectile bans";
         public override Version Version => new Version(1, 0, 0, 0);
         public Configurations(Main game) : base(game) { }
@@ -30,6 +30,7 @@ namespace Configurations
             {
                 ServerApi.Hooks.GamePostInitialize.Deregister(this, OnPostInit);
                 GeneralHooks.ReloadEvent -= OnReload;
+                Database.Dispose();
             }
             base.Dispose(disposing);
         }
