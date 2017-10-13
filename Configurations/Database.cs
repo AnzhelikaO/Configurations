@@ -55,10 +55,6 @@ namespace Configurations
                     : new MysqlQueryCreator())
             );
 
-            sqlcreator.EnsureTableStructure(new SqlTable("RemovedPlugins",
-                new SqlColumn("WorldID", MySqlDbType.Int32),
-                new SqlColumn("PluginName", MySqlDbType.Text)));
-
             sqlcreator.EnsureTableStructure(new SqlTable("GroupsConfiguration",
                 new SqlColumn("WorldID", MySqlDbType.Int32),
                 new SqlColumn("GroupName", MySqlDbType.Text),
@@ -84,22 +80,6 @@ namespace Configurations
 
         public static void LoadConfiguration()
         { try {
-            using (QueryResult plugins = DB.QueryReader("SELECT * FROM RemovedPlugins WHERE WorldID=@0;", Main.worldID))
-            {
-                List<string> Plugins = new List<string>();
-                while (plugins.Read())
-                { Plugins.Add(plugins.Get<string>("PluginName")); }
-
-                if (Plugins.Count > 0)
-                {
-                    foreach (PluginContainer Plugin in ServerApi.Plugins)
-                    {
-                        if (Plugins.Contains(Plugin.Plugin.Name))
-                        { Plugin.Dispose(); }
-                    }
-                }
-            }
-
             using (QueryResult groups = DB.QueryReader("SELECT * FROM GroupsConfiguration WHERE WorldID=@0;", Main.worldID))
             {
                 while (groups.Read())
