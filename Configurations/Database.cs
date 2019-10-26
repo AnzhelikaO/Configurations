@@ -5,7 +5,6 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using Terraria;
-using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.DB;
 using TShockAPI.Localization;
@@ -47,34 +46,39 @@ namespace Configurations
                     }
             }
 
-            SqlTableCreator sqlcreator = new SqlTableCreator
-            (
-                DB,
-                ((DB.GetSqlType() == SqlType.Sqlite)
-                    ? (IQueryBuilder)new SqliteQueryCreator()
-                    : new MysqlQueryCreator())
-            );
+            DB.Query(@"
+CREATE TABLE IF NOT EXISTS GroupsConfiguration
+(
+    WorldID INTEGER,
+    GroupName VARCHAR(100),
+    AddedPermissions TEXT,
+    RemovedPermissions TEXT,
+    UNIQUE KEY (WorldID, GroupName)
+);
 
-            sqlcreator.EnsureTableStructure(new SqlTable("GroupsConfiguration",
-                new SqlColumn("WorldID", MySqlDbType.Int32),
-                new SqlColumn("GroupName", MySqlDbType.Text),
-                new SqlColumn("AddedPermissions", MySqlDbType.Text),
-                new SqlColumn("RemovedPermissions", MySqlDbType.Text)));
+CREATE TABLE IF NOT EXISTS ItemBansOverride
+(
+    WorldID INTEGER,
+    ItemBan INTEGER,
+    Type VARCHAR(50),
+    UNIQUE KEY (WorldID, ItemBan)
+);
 
-            sqlcreator.EnsureTableStructure(new SqlTable("ItemBans",
-                new SqlColumn("WorldID", MySqlDbType.Int32),
-                new SqlColumn("ItemBan", MySqlDbType.Int32),
-                new SqlColumn("Type", MySqlDbType.Text)));
+CREATE TABLE IF NOT EXISTS ProjectileBansOverride
+(
+    WorldID INTEGER,
+    ProjectileBan INTEGER,
+    Type VARCHAR(50),
+    UNIQUE KEY (WorldID, ProjectileBan)
+);
 
-            sqlcreator.EnsureTableStructure(new SqlTable("ProjectileBans",
-                new SqlColumn("WorldID", MySqlDbType.Int32),
-                new SqlColumn("ProjectileBan", MySqlDbType.Int32),
-                new SqlColumn("Type", MySqlDbType.Int32)));
-
-            sqlcreator.EnsureTableStructure(new SqlTable("TileBans",
-                new SqlColumn("WorldID", MySqlDbType.Int32),
-                new SqlColumn("TileBan", MySqlDbType.Int32),
-                new SqlColumn("Type", MySqlDbType.Int32)));
+CREATE TABLE IF NOT EXISTS TileBansOverride
+(
+    WorldID INTEGER,
+    TileBan INTEGER,
+    Type VARCHAR(50),
+    UNIQUE KEY (WorldID, TileBan)
+);");
         }
         public static void Dispose() => DB.Dispose();
 
@@ -103,7 +107,7 @@ namespace Configurations
                 }
             }
 
-            using (QueryResult itemBans = DB.QueryReader("SELECT * FROM ItemBans WHERE WorldID=@0;", Main.worldID))
+            using (QueryResult itemBans = DB.QueryReader("SELECT * FROM ItemBansOverride WHERE WorldID=@0;", Main.worldID))
             {
                 while (itemBans.Read())
                 {
@@ -119,7 +123,7 @@ namespace Configurations
                 }
             }
 
-            using (QueryResult projectileBans = DB.QueryReader("SELECT * FROM ProjectileBans WHERE WorldID=@0;", Main.worldID))
+            using (QueryResult projectileBans = DB.QueryReader("SELECT * FROM ProjectileBansOverride WHERE WorldID=@0;", Main.worldID))
             {
                 while (projectileBans.Read())
                 {
@@ -132,7 +136,7 @@ namespace Configurations
                 }
             }
 
-            using (QueryResult tileBans = DB.QueryReader("SELECT * FROM TileBans WHERE WorldID=@0;", Main.worldID))
+            using (QueryResult tileBans = DB.QueryReader("SELECT * FROM TileBansOverride WHERE WorldID=@0;", Main.worldID))
             {
                 while (tileBans.Read())
                 {
@@ -145,5 +149,41 @@ namespace Configurations
                 }
             }
         } catch { } }
+
+        public static void AddItemBan(int ID, bool Whitelist) =>
+            DB.Query("REPLACE INTO ItemBansOverride (WorldID, ItemBan, Type) " +
+                "VALUES (@0, @1, @2);", Main.worldID, ID, (Whitelist ? "whitelist" : "blacklist"));
+
+        public static void AddProjectileBan(int ID, bool Whitelist) =>
+            DB.Query("REPLACE INTO ProjectileBansOverride (WorldID, ProjectileBan, Type) " +
+                "VALUES (@0, @1, @2);", Main.worldID, ID, (Whitelist ? "whitelist" : "blacklist"));
+
+        public static void AddTileBan(int ID, bool Whitelist) =>
+            DB.Query("REPLACE INTO TileBansOverride (WorldID, TileBan, Type) " +
+                "VALUES (@0, @1, @2);", Main.worldID, ID, (Whitelist ? "whitelist" : "blacklist"));
+
+        public static void RemoveItemBan(int ID) =>
+            DB.Query("DELETE FROM ItemBansOverride WHERE WorldID=@0 AND ItemBan=@1;", Main.worldID, ID);
+
+        public static void RemoveProjectileBan(int ID) =>
+            DB.Query("DELETE FROM ProjectileBansOverride WHERE WorldID=@0 AND ProjectileBan=@1;", Main.worldID, ID);
+
+        public static void RemoveTileBan(int ID) =>
+            DB.Query("DELETE FROM TileBansOverride WHERE WorldID=@0 AND TileBan=@1;", Main.worldID, ID);
+
+        public static (int ID, bool Whitelist)[] GetItemBans() => GetBans("ItemBan");
+
+        public static (int ID, bool Whitelist)[] GetProjectileBans() => GetBans("ProjectileBan");
+
+        public static (int ID, bool Whitelist)[] GetTileBans() => GetBans("TileBan");
+
+        private static (int ID, bool Whitelist)[] GetBans(string BanName)
+        {
+            List<(int, bool)> bans = new List<(int, bool)>();
+            using (QueryResult reader = DB.QueryReader($"SELECT * FROM {BanName}sOverride WHERE WorldID=@0;", Main.worldID))
+                while (reader.Read())
+                    bans.Add((reader.Get<int>(BanName), (reader.Get<string>("Type")?.ToLower() == "whitelist")));
+            return bans.ToArray();
+        }
     }
 }
