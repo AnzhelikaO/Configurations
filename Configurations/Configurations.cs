@@ -19,6 +19,7 @@ namespace Configurations
             Database.Connect();
             ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInit);
             GeneralHooks.ReloadEvent += OnReload;
+            WorldBanCommands.Register();
         }
 
         private void OnReload(ReloadEventArgs args)
@@ -31,6 +32,7 @@ namespace Configurations
                 ServerApi.Hooks.GamePostInitialize.Deregister(this, OnPostInit);
                 GeneralHooks.ReloadEvent -= OnReload;
                 Database.Dispose();
+                WorldBanCommands.Deregister();
             }
             base.Dispose(disposing);
         }
