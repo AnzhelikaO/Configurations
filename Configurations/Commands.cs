@@ -1,13 +1,17 @@
-﻿using System;
+﻿#region Using
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
 using TShockAPI;
-
+using TShockAPI.DB;
+#endregion
 namespace Configurations
 {
     class WorldBanCommands
     {
+        #region Register
+
         private static List<Command> Commands = new List<Command>();
         public static void Register()
         {
@@ -21,6 +25,10 @@ namespace Configurations
         }
         public static void Deregister() =>
             TShockAPI.Commands.ChatCommands.RemoveAll(c => Commands.Contains(c));
+
+        #endregion
+
+        #region ItemBan
 
         private static void ItemBan(CommandArgs args)
         {
@@ -47,7 +55,8 @@ namespace Configurations
                     }
                     else
                     {
-                        Database.AddItemBan(items[0].type, whitelist);
+                        if (Database.AddItemBan(items[0].type, whitelist))
+                            TShock.Itembans.ItemBans.Add(new ItemBan(items[0].Name));
                         args.Player.SendSuccessMessage((whitelist ? "Unbanned " : "Banned ") + items[0].Name + " on current world.");
                     }
                 }
@@ -113,7 +122,7 @@ namespace Configurations
                     {
                         Item i = new Item();
                         i.netDefaults(ban.ID);
-                        return $"{i.HoverName} ({i.netID}, {(ban.Whitelist ? "unbanned" : "banned")})";
+                        return $"{i.Name} ({i.netID}, {(ban.Whitelist ? "unbanned" : "banned")})";
                     });
                     PaginationTools.SendPage(args.Player, pageNumber, PaginationTools.BuildLinesFromTerms(itemBans),
                         new PaginationTools.Settings
@@ -127,6 +136,9 @@ namespace Configurations
                 return;
             }
         }
+
+        #endregion
+        #region ProjectileBan
 
         private static void ProjectileBan(CommandArgs args)
         {
@@ -144,7 +156,8 @@ namespace Configurations
                     short id;
                     if (Int16.TryParse(args.Parameters[1], out id) && id > 0 && id < Main.maxProjectileTypes)
                     {
-                        Database.AddProjectileBan(id, whitelist);
+                        if (Database.AddProjectileBan(id, whitelist))
+                            TShock.ProjectileBans.ProjectileBans.Add(new ProjectileBan(id));
                         args.Player.SendSuccessMessage((whitelist ? "Unbanned " : "Banned ") + " projectile {0} on current world.", id);
                     }
                     else
@@ -218,6 +231,9 @@ namespace Configurations
             }
         }
 
+        #endregion
+        #region TileBan
+
         private static void TileBan(CommandArgs args)
         {
             string subCmd = args.Parameters.Count == 0 ? "help" : args.Parameters[0].ToLower();
@@ -234,7 +250,8 @@ namespace Configurations
                     short id;
                     if (Int16.TryParse(args.Parameters[1], out id) && id >= 0 && id < Main.maxTileSets)
                     {
-                        Database.AddTileBan(id, whitelist);
+                        if (Database.AddTileBan(id, whitelist))
+                            TShock.TileBans.TileBans.Add(new TileBan(id));
                         args.Player.SendSuccessMessage((whitelist ? "Unbanned " : "Banned ") + " tile {0} on current world.", id);
                     }
                     else
@@ -308,6 +325,10 @@ namespace Configurations
             }
         }
 
+        #endregion
+
+        #region GetType
+
         private static bool GetType(CommandArgs args, out bool Whitelist)
         {
             switch (args.Parameters[2].ToLower())
@@ -322,5 +343,7 @@ namespace Configurations
                     return (Whitelist = false);
             }
         }
+
+        #endregion
     }
 }
