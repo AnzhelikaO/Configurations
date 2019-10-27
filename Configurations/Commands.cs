@@ -40,7 +40,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 3 || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}witemban add <item name> <whitelist/w/blacklist/b>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}witemban add <item name or id> <whitelist/w/blacklist/b>", TShock.Config.CommandSpecifier);
                         return;
                     }
 
@@ -67,7 +67,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}witemban del <item name>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}witemban del <item name name or id>", TShock.Config.CommandSpecifier);
                         return;
                     }
 
@@ -97,8 +97,8 @@ namespace Configurations
 
                     var lines = new List<string>
                     {
-                        "add <item> - Adds an item ban on current world.",
-                        "del <item> - Deletes an item ban on current world.",
+                        "add <item name or id> <whitelist/w/blacklist/b> - Adds an item ban on current world.",
+                        "del <item name or id> - Deletes an item ban on current world.",
                         "list [page] - Lists all item bans on current world."
                     };
 
@@ -195,7 +195,7 @@ namespace Configurations
 
                     var lines = new List<string>
                     {
-                        "add <projectile ID> - Adds a projectile ban on current world.",
+                        "add <projectile ID> <whitelist/w/blacklist/b> - Adds a projectile ban on current world.",
                         "del <projectile ID> - Deletes an projectile ban on current world.",
                         "list [page] - Lists all projectile bans on current world."
                     };
@@ -289,7 +289,7 @@ namespace Configurations
 
                     var lines = new List<string>
                         {
-                            "add <tile ID> - Adds a tile ban on current world.",
+                            "add <tile ID> <whitelist/w/blacklist/b> - Adds a tile ban on current world.",
                             "del <tile ID> - Deletes a tile ban on current world.",
                             "list [page] - Lists all tile bans on current world."
                         };
