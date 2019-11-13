@@ -31,7 +31,7 @@ namespace Configurations
 
         private static void ItemBan(CommandArgs args)
         {
-            switch (args.Parameters[0]?.ToLower())
+            switch (args.Parameters.FirstOrDefault()?.ToLower())
             {
                 case "add":
                 {
@@ -158,7 +158,7 @@ namespace Configurations
 
         private static void ProjectileBan(CommandArgs args)
         {
-            switch (args.Parameters[0]?.ToLower())
+            switch (args.Parameters.FirstOrDefault()?.ToLower())
             {
                 case "add":
                 {
@@ -267,7 +267,7 @@ namespace Configurations
 
         private static void TileBan(CommandArgs args)
         {
-            switch (args.Parameters[0]?.ToLower())
+            switch (args.Parameters.FirstOrDefault()?.ToLower())
             {
                 case "add":
                 {
