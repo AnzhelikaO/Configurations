@@ -1,8 +1,12 @@
 ﻿#region Using
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Terraria;
 using TerrariaApi.Server;
+using TShockAPI;
+using TShockAPI.DB;
 using TShockAPI.Hooks;
 #endregion
 namespace Configurations
@@ -16,6 +20,7 @@ namespace Configurations
         public override string Name => "Configurations";
         public override string Description => "Separate group permissions, item/tile/projectile bans";
         public override Version Version => Assembly.GetExecutingAssembly().GetName().Version;
+        private bool Initialized = false;
         public Configurations(Main game) : base(game) { }
 
         #endregion
@@ -30,8 +35,11 @@ namespace Configurations
             WorldBanCommands.Register();
         }
 
-        private void OnGamePostInitialize(EventArgs args) =>
+        private void OnGamePostInitialize(EventArgs args)
+        {
             Database.LoadConfiguration();
+            Initialized = true;
+        }
 
         #endregion
         #region Dispose

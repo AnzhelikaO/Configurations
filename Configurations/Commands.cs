@@ -1,5 +1,4 @@
 ﻿#region Using
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
@@ -32,15 +31,14 @@ namespace Configurations
 
         private static void ItemBan(CommandArgs args)
         {
-            string subCmd = args.Parameters.Count == 0 ? "help" : args.Parameters[0].ToLower();
-            switch (subCmd)
+            switch (args.Parameters[0]?.ToLower())
             {
                 case "add":
-                #region Add item
                 {
-                    if (args.Parameters.Count != 3 || !GetType(args, out bool whitelist))
+                    if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}witemban add <item name or id> <whitelist/w/blacklist/b>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                            "witemban add <item name or id> <whitelist/w/blacklist/b>");
                         return;
                     }
 
@@ -48,26 +46,47 @@ namespace Configurations
                     if (items.Count == 0)
                     {
                         args.Player.SendErrorMessage("Invalid item.");
+                        return;
                     }
                     else if (items.Count > 1)
                     {
                         TShock.Utils.SendMultipleMatchError(args.Player, items.Select(i => $"{i.Name}({i.netID})"));
+                        return;
                     }
-                    else
+
+                    string name = items[0].Name;
+                    if (whitelist && TShock.Itembans.ItemBans.Any(b => (b.Name == name)))
                     {
-                        if (Database.AddItemBan(items[0].type, whitelist))
-                            TShock.Itembans.ItemBans.Add(new ItemBan(items[0].Name));
-                        args.Player.SendSuccessMessage((whitelist ? "Unbanned " : "Banned ") + items[0].Name + " on current world.");
+                        if (Database.AddItemBan(items[0].netID, true))
+                        {
+                            TShock.Itembans.ItemBans.RemoveAll(b => (b.Name == name));
+                            args.Player.SendSuccessMessage($"Unbanned item {name} on current world.");
+                        }
+                        else
+                            args.Player.SendErrorMessage($"Item {name} is not banned on current world.");
                     }
+                    else if (!whitelist && !TShock.Itembans.ItemBans.Any(b => (b.Name == name)))
+                    {
+                        if (Database.AddItemBan(items[0].netID, false))
+                        {
+                            TShock.Itembans.ItemBans.Add(new ItemBan(name));
+                            args.Player.SendSuccessMessage($"Banned item {name} on current world.");
+                        }
+                        else
+                            args.Player.SendErrorMessage($"Item {name} is already banned on current world.");
+                    }
+                    else if (whitelist)
+                        args.Player.SendErrorMessage($"Item {name} is not banned.");
+                    else
+                        args.Player.SendErrorMessage($"Item {name} is already banned.");
+                    return;
                 }
-                #endregion
-                return;
                 case "del":
-                #region Delete item
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}witemban del <item name name or id>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                            "witemban del <item name name or id>");
                         return;
                     }
 
@@ -75,65 +94,62 @@ namespace Configurations
                     if (items.Count == 0)
                     {
                         args.Player.SendErrorMessage("Invalid item.");
+                        return;
                     }
                     else if (items.Count > 1)
                     {
                         TShock.Utils.SendMultipleMatchError(args.Player, items.Select(i => $"{i.Name}({i.netID})"));
-                    }
-                    else
-                    {
-                        Database.RemoveItemBan(items[0].type);
-                        args.Player.SendSuccessMessage("Unbanned " + items[0].Name + " on current world.");
-                    }
-                }
-                #endregion
-                return;
-                case "help":
-                #region Help
-                {
-                    int pageNumber;
-                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
                         return;
+                    }
 
-                    var lines = new List<string>
+                    string name = items[0].Name;
+                    if (Database.RemoveItemBan(items[0].netID, out bool whitelist))
                     {
-                        "add <item name or id> <whitelist/w/blacklist/b> - Adds an item ban on current world.",
-                        "del <item name or id> - Deletes an item ban on current world.",
-                        "list [page] - Lists all item bans on current world."
-                    };
-
-                    PaginationTools.SendPage(args.Player, pageNumber, lines,
-                        new PaginationTools.Settings
+                        if (whitelist)
                         {
-                            HeaderFormat = "Item Ban Sub-Commands ({0}/{1}):",
-                            FooterFormat = "Type {0}witemban help {{0}} for more sub-commands.".SFormat(TShock.Config.CommandSpecifier)
+                            TShock.Itembans.ItemBans.Add(new ItemBan(name));
+                            args.Player.SendSuccessMessage($"Banned item {name}.");
                         }
-                    );
+                        else
+                        {
+                            TShock.Itembans.ItemBans.RemoveAll(b => (b.Name == name));
+                            args.Player.SendSuccessMessage($"Unbanned item {name}.");
+                        }
+                    }
+                    else if (whitelist)
+                        args.Player.SendErrorMessage($"Item {items[0].Name} is not banned.");
+                    else
+                        args.Player.SendErrorMessage($"Item {items[0].Name} is already banned.");
+                    return;
                 }
-                #endregion
-                return;
                 case "list":
-                #region List items
                 {
-                    int pageNumber;
-                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out int pageNumber))
                         return;
-                    IEnumerable<string> itemBans = Database.GetItemBans().Select(ban =>
-                    {
-                        Item i = new Item();
-                        i.netDefaults(ban.ID);
-                        return $"{i.Name} ({i.netID}, {(ban.Whitelist ? "unbanned" : "banned")})";
-                    });
-                    PaginationTools.SendPage(args.Player, pageNumber, PaginationTools.BuildLinesFromTerms(itemBans),
+
+                    PaginationTools.SendPage(args.Player, pageNumber,
+                        PaginationTools.BuildLinesFromTerms(Database.GetItemBans().Select(ban =>
+                        {
+                            Item i = new Item();
+                            i.netDefaults(ban.ID);
+                            return $"{i.Name} ({i.netID}, {(ban.Whitelist ? "unbanned" : "banned")})";
+                        })),
                         new PaginationTools.Settings
                         {
-                            HeaderFormat = "Item bans on current world ({0}/{1}):",
-                            FooterFormat = "Type {0}witemban list {{0}} for more.".SFormat(TShock.Config.CommandSpecifier),
+                            HeaderFormat = "World Item bans on current world ({0}/{1}):",
+                            FooterFormat = $"Type {TShock.Config.CommandSpecifier}witemban list {{0}} for more.",
                             NothingToDisplayString = "There are currently no banned items on current world."
                         });
+                    return;
                 }
-                #endregion
-                return;
+                default:
+                {
+                    args.Player.SendSuccessMessage("World Item Ban Sub-Commands:");
+                    args.Player.SendInfoMessage("add <item name or id> <whitelist/w/blacklist/b> - Adds an item ban on current world.\n" +
+                        "del <item name or id> - Deletes an item ban on current world.\n" +
+                        "list [page] - Lists all item bans on current world.");
+                    return;
+                }
             }
         }
 
@@ -142,92 +158,107 @@ namespace Configurations
 
         private static void ProjectileBan(CommandArgs args)
         {
-            string subCmd = args.Parameters.Count == 0 ? "help" : args.Parameters[0].ToLower();
-            switch (subCmd)
+            switch (args.Parameters[0]?.ToLower())
             {
                 case "add":
-                #region Add projectile
                 {
-                    if (args.Parameters.Count != 3 || !GetType(args, out bool whitelist))
+                    if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}wprojban add <proj id> <whitelist/w/blacklist/b>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                            "wprojban add <proj id> <whitelist/w/blacklist/b>");
                         return;
                     }
-                    short id;
-                    if (Int16.TryParse(args.Parameters[1], out id) && id > 0 && id < Main.maxProjectileTypes)
+                    if (!short.TryParse(args.Parameters[1], out short id)
+                        || (id <= 0) || (id >= Main.maxProjectileTypes))
                     {
-                        if (Database.AddProjectileBan(id, whitelist))
-                            TShock.ProjectileBans.ProjectileBans.Add(new ProjectileBan(id));
-                        args.Player.SendSuccessMessage((whitelist ? "Unbanned " : "Banned ") + " projectile {0} on current world.", id);
+                        args.Player.SendErrorMessage("Invalid projectile ID.");
+                        return;
                     }
+
+                    if (whitelist && TShock.ProjectileBans.ProjectileBans.Any(b => (b.ID == id)))
+                    {
+                        if (Database.AddProjectileBan(id, true))
+                        {
+                            TShock.ProjectileBans.ProjectileBans.RemoveAll(b => (b.ID == id));
+                            args.Player.SendSuccessMessage($"Unbanned projectile {id} on current world.");
+                        }
+                        else
+                            args.Player.SendErrorMessage($"Projectile {id} is not banned on current world.");
+                    }
+                    else if (!whitelist && !TShock.ProjectileBans.ProjectileBans.Any(b => (b.ID == id)))
+                    {
+                        if (Database.AddProjectileBan(id, false))
+                        {
+                            TShock.ProjectileBans.ProjectileBans.Add(new ProjectileBan(id));
+                            args.Player.SendSuccessMessage($"Banned {id} on current world.");
+                        }
+                        else
+                            args.Player.SendErrorMessage($"Projectile {id} is already banned on current world.");
+                    }
+                    else if (whitelist)
+                        args.Player.SendErrorMessage($"Projectile {id} is not banned.");
                     else
-                        args.Player.SendErrorMessage("Invalid projectile ID!");
+                        args.Player.SendErrorMessage($"Projectile {id} is already banned.");
+                    return;
                 }
-                #endregion
-                return;
                 case "del":
-                #region Delete projectile
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}wprojban del <id>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                            "wprojban del <id>");
+                        return;
+                    }
+                    if (!short.TryParse(args.Parameters[1], out short id)
+                        || (id <= 0) || (id >= Main.maxProjectileTypes))
+                    {
+                        args.Player.SendErrorMessage("Invalid projectile ID.");
                         return;
                     }
 
-                    short id;
-                    if (Int16.TryParse(args.Parameters[1], out id) && id > 0 && id < Main.maxProjectileTypes)
+                    if (Database.RemoveProjectileBan(id, out bool whitelist))
                     {
-                        Database.RemoveProjectileBan(id);
-                        args.Player.SendSuccessMessage("Unbanned projectile {0} on current world.", id);
-                        return;
-                    }
-                    else
-                        args.Player.SendErrorMessage("Invalid projectile ID!");
-                }
-                #endregion
-                return;
-                case "help":
-                #region Help
-                {
-                    int pageNumber;
-                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
-                        return;
-
-                    var lines = new List<string>
-                    {
-                        "add <projectile ID> <whitelist/w/blacklist/b> - Adds a projectile ban on current world.",
-                        "del <projectile ID> - Deletes an projectile ban on current world.",
-                        "list [page] - Lists all projectile bans on current world."
-                    };
-
-                    PaginationTools.SendPage(args.Player, pageNumber, lines,
-                        new PaginationTools.Settings
+                        if (whitelist)
                         {
-                            HeaderFormat = "Projectile Ban Sub-Commands on current world ({0}/{1}):",
-                            FooterFormat = "Type {0}wprojban help {{0}} for more sub-commands.".SFormat(TShock.Config.CommandSpecifier)
+                            TShock.ProjectileBans.ProjectileBans.Add(new ProjectileBan(id));
+                            args.Player.SendSuccessMessage($"Banned projectile {id}.");
                         }
-                    );
+                        else
+                        {
+                            TShock.ProjectileBans.ProjectileBans.RemoveAll(b => (b.ID == id));
+                            args.Player.SendSuccessMessage($"Unbanned projectile {id}.");
+                        }
+                    }
+                    else if (whitelist)
+                        args.Player.SendErrorMessage($"Projectile {id} is not banned.");
+                    else
+                        args.Player.SendErrorMessage($"Projectile {id} is already banned.");
+                    return;
                 }
-                #endregion
-                return;
                 case "list":
-                #region List projectiles
                 {
-                    int pageNumber;
-                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out int pageNumber))
                         return;
-                    IEnumerable<string> projectileBans = Database.GetProjectileBans().Select(ban =>
-                        $"{ban.ID} ({(ban.Whitelist ? "unbanned" : "banned")})");
-                    PaginationTools.SendPage(args.Player, pageNumber, PaginationTools.BuildLinesFromTerms(projectileBans),
+
+                    PaginationTools.SendPage(args.Player, pageNumber,
+                        PaginationTools.BuildLinesFromTerms(Database.GetProjectileBans().Select(ban =>
+                            $"{ban.ID} ({(ban.Whitelist ? "unbanned" : "banned")})")),
                         new PaginationTools.Settings
                         {
                             HeaderFormat = "Projectile bans on current world ({0}/{1}):",
-                            FooterFormat = "Type {0}wprojban list {{0}} for more.".SFormat(TShock.Config.CommandSpecifier),
+                            FooterFormat = $"Type {TShock.Config.CommandSpecifier}wprojban list {{0}} for more.",
                             NothingToDisplayString = "There are currently no banned projectiles on current world."
                         });
+                    return;
                 }
-                #endregion
-                return;
+                default:
+                {
+                    args.Player.SendSuccessMessage("World Projectile Ban Sub-Commands:");
+                    args.Player.SendInfoMessage("add <projectile ID> <whitelist/w/blacklist/b> - Adds a projectile ban on current world.\n" +
+                        "del <projectile ID> - Deletes an projectile ban on current world.\n" +
+                        "list [page] - Lists all projectile bans on current world.");
+                    return;
+                }
             }
         }
 
@@ -236,92 +267,109 @@ namespace Configurations
 
         private static void TileBan(CommandArgs args)
         {
-            string subCmd = args.Parameters.Count == 0 ? "help" : args.Parameters[0].ToLower();
-            switch (subCmd)
+            switch (args.Parameters[0]?.ToLower())
             {
                 case "add":
-                #region Add tile
                 {
-                    if (args.Parameters.Count != 3 || !GetType(args, out bool whitelist))
+                    if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}wtileban add <tile id> <whitelist/w/blacklist/b>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                            "wtileban add <tile id> <whitelist/w/blacklist/b>");
                         return;
                     }
-                    short id;
-                    if (Int16.TryParse(args.Parameters[1], out id) && id >= 0 && id < Main.maxTileSets)
+
+                    if (!short.TryParse(args.Parameters[1], out short id)
+                        || (id < 0) || (id >= Main.maxTileSets))
                     {
-                        if (Database.AddTileBan(id, whitelist))
-                            TShock.TileBans.TileBans.Add(new TileBan(id));
-                        args.Player.SendSuccessMessage((whitelist ? "Unbanned " : "Banned ") + " tile {0} on current world.", id);
+                        args.Player.SendErrorMessage("Invalid tile ID.");
+                        return;
                     }
+
+                    if (whitelist && TShock.TileBans.TileBans.Any(b => (b.ID == id)))
+                    {
+                        if (Database.AddTileBan(id, true))
+                        {
+                            TShock.TileBans.TileBans.RemoveAll(b => (b.ID == id));
+                            args.Player.SendSuccessMessage($"Unbanned tile {id} on current world.");
+                        }
+                        else
+                            args.Player.SendErrorMessage($"Tile {id} is not banned on current world.");
+                    }
+                    else if (!whitelist && !TShock.TileBans.TileBans.Any(b => (b.ID == id)))
+                    {
+                        if (Database.AddTileBan(id, false))
+                        {
+                            TShock.TileBans.TileBans.Add(new TileBan(id));
+                            args.Player.SendSuccessMessage($"Banned tile {id} on current world.");
+                        }
+                        else
+                            args.Player.SendErrorMessage($"Tile {id} is already banned on current world.");
+                    }
+                    else if (whitelist)
+                        args.Player.SendErrorMessage($"Tile {id} is not banned.");
                     else
-                        args.Player.SendErrorMessage("Invalid tile ID!");
+                        args.Player.SendErrorMessage($"Tile {id} is already banned.");
+                    return;
                 }
-                #endregion
-                return;
                 case "del":
-                #region Delete tile ban
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage("Invalid syntax! Proper syntax: {0}wtileban del <id>", TShock.Config.CommandSpecifier);
+                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                            "wtileban del <id>");
                         return;
                     }
 
-                    short id;
-                    if (Int16.TryParse(args.Parameters[1], out id) && id >= 0 && id < Main.maxTileSets)
+                    if (!short.TryParse(args.Parameters[1], out short id)
+                        || (id < 0) || (id >= Main.maxTileSets))
                     {
-                        Database.RemoveTileBan(id);
-                        args.Player.SendSuccessMessage("Unbanned tile {0} on current world.", id);
+                        args.Player.SendErrorMessage("Invalid tile ID.");
                         return;
                     }
-                    else
-                        args.Player.SendErrorMessage("Invalid tile ID!");
-                }
-                #endregion
-                return;
-                case "help":
-                #region Help
-                {
-                    int pageNumber;
-                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
-                        return;
 
-                    var lines = new List<string>
+                    if (Database.RemoveTileBan(id, out bool whitelist))
+                    {
+                        if (whitelist)
                         {
-                            "add <tile ID> <whitelist/w/blacklist/b> - Adds a tile ban on current world.",
-                            "del <tile ID> - Deletes a tile ban on current world.",
-                            "list [page] - Lists all tile bans on current world."
-                        };
-
-                    PaginationTools.SendPage(args.Player, pageNumber, lines,
-                        new PaginationTools.Settings
-                        {
-                            HeaderFormat = "Tile Ban Sub-Commands ({0}/{1}):",
-                            FooterFormat = "Type {0}wtileban help {{0}} for more sub-commands.".SFormat(TShock.Config.CommandSpecifier)
+                            TShock.TileBans.TileBans.Add(new TileBan(id));
+                            args.Player.SendSuccessMessage($"Banned tile {id}.");
                         }
-                    );
+                        else
+                        {
+                            TShock.TileBans.TileBans.RemoveAll(b => (b.ID == id));
+                            args.Player.SendSuccessMessage($"Unbanned tile {id}.");
+                        }
+                    }
+                    else if (whitelist)
+                        args.Player.SendErrorMessage($"Tile {id} is not banned.");
+                    else
+                        args.Player.SendErrorMessage($"Tile {id} is already banned.");
+                    return;
                 }
-                #endregion
-                return;
                 case "list":
-                #region List tile bans
                 {
-                    int pageNumber;
-                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+                    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out int pageNumber))
                         return;
-                    IEnumerable<string> tileBans = Database.GetTileBans().Select(ban =>
-                        $"{ban.ID} ({(ban.Whitelist ? "unbanned" : "banned")})");
-                    PaginationTools.SendPage(args.Player, pageNumber, PaginationTools.BuildLinesFromTerms(tileBans),
+
+                    PaginationTools.SendPage(args.Player, pageNumber,
+                        PaginationTools.BuildLinesFromTerms(Database.GetTileBans().Select(ban =>
+                            $"{ban.ID} ({(ban.Whitelist ? "unbanned" : "banned")})")),
                         new PaginationTools.Settings
                         {
                             HeaderFormat = "Tile bans on current world ({0}/{1}):",
-                            FooterFormat = "Type {0}wtileban list {{0}} for more.".SFormat(TShock.Config.CommandSpecifier),
+                            FooterFormat = $"Type {TShock.Config.CommandSpecifier}wtileban list {{0}} for more.",
                             NothingToDisplayString = "There are currently no banned tiles on current world."
                         });
+                    return;
                 }
-                #endregion
-                return;
+                default:
+                {
+                    args.Player.SendSuccessMessage("World Tile Ban Sub-Commands:");
+                    args.Player.SendInfoMessage("add <tile ID> <whitelist/w/blacklist/b> - Adds a tile ban on current world.\n" +
+                        "del <tile ID> - Deletes an tile ban on current world.\n" +
+                        "list [page] - Lists all tile bans on current world.");
+                    return;
+                }
             }
         }
 

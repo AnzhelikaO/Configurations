@@ -171,24 +171,38 @@ CREATE TABLE IF NOT EXISTS TileBansOverride
         #region Add
 
         public static bool AddItemBan(int ID, bool Whitelist) =>
-            (DB.Query("REPLACE INTO ItemBansOverride (WorldID, ItemBan, Type) " +
-                "VALUES (@0, @1, @2);", Main.worldID, ID, (Whitelist ? "whitelist" : "blacklist")) > 0);
+            (DB.Query("REPLACE INTO ItemBansOverride (WorldID, ItemBan, Whitelist) " +
+                "VALUES (@0, @1, @2);", Main.worldID, ID, Whitelist) > 0);
         public static bool AddProjectileBan(int ID, bool Whitelist) =>
             (DB.Query("REPLACE INTO ProjectileBansOverride (WorldID, ProjectileBan, Type) " +
-                "VALUES (@0, @1, @2);", Main.worldID, ID, (Whitelist ? "whitelist" : "blacklist")) > 0);
+                "VALUES (@0, @1, @2);", Main.worldID, ID, Whitelist) > 0);
         public static bool AddTileBan(int ID, bool Whitelist) =>
             (DB.Query("REPLACE INTO TileBansOverride (WorldID, TileBan, Type) " +
-                "VALUES (@0, @1, @2);", Main.worldID, ID, (Whitelist ? "whitelist" : "blacklist")) > 0);
+                "VALUES (@0, @1, @2);", Main.worldID, ID, Whitelist) > 0);
 
         #endregion
         #region Remove
 
-        public static bool RemoveItemBan(int ID) =>
-            (DB.Query("DELETE FROM ItemBansOverride WHERE WorldID=@0 AND ItemBan=@1;", Main.worldID, ID) > 0);
-        public static bool RemoveProjectileBan(int ID) =>
-            (DB.Query("DELETE FROM ProjectileBansOverride WHERE WorldID=@0 AND ProjectileBan=@1;", Main.worldID, ID) > 0);
-        public static bool RemoveTileBan(int ID) =>
-            (DB.Query("DELETE FROM TileBansOverride WHERE WorldID=@0 AND TileBan=@1;", Main.worldID, ID) > 0);
+        public static bool RemoveItemBan(int ID, out bool Whitelist) =>
+            RemoveBan("ItemBan", ID, out Whitelist);
+        public static bool RemoveProjectileBan(int ID, out bool Whitelist) =>
+            RemoveBan("ProjectileBan", ID, out Whitelist);
+        public static bool RemoveTileBan(int ID, out bool Whitelist) =>
+            RemoveBan("TileBan", ID, out Whitelist);
+
+        private static bool RemoveBan(string BanName, int ID, out bool Whitelist)
+        {
+            using (QueryResult reader = DB.QueryReader(
+$@"SELECT Whitelist FROM {BanName}sOverride WHERE WorldID=@0 AND {BanName}=@1;
+DELETE FROM {BanName}sOverride WHERE WorldID=@0 AND {BanName}=@1;", Main.worldID, ID))
+                if (reader.Read())
+                {
+                    Whitelist = reader.Get<bool>("Whitelist");
+                    return true;
+                }
+                else
+                    return (Whitelist = false);
+        }
 
         #endregion
         #region Get
@@ -202,7 +216,7 @@ CREATE TABLE IF NOT EXISTS TileBansOverride
             List<(int, bool)> bans = new List<(int, bool)>();
             using (QueryResult reader = DB.QueryReader($"SELECT * FROM {BanName}sOverride WHERE WorldID=@0;", Main.worldID))
                 while (reader.Read())
-                    bans.Add((reader.Get<int>(BanName), (reader.Get<string>("Type")?.ToLower() == "whitelist")));
+                    bans.Add((reader.Get<int>(BanName), reader.Get<bool>("Whitelist")));
             return bans.ToArray();
         }
 
