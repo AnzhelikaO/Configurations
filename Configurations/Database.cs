@@ -174,10 +174,10 @@ CREATE TABLE IF NOT EXISTS TileBansOverride
             (DB.Query("REPLACE INTO ItemBansOverride (WorldID, ItemBan, Whitelist) " +
                 "VALUES (@0, @1, @2);", Main.worldID, ID, Whitelist) > 0);
         public static bool AddProjectileBan(int ID, bool Whitelist) =>
-            (DB.Query("REPLACE INTO ProjectileBansOverride (WorldID, ProjectileBan, Type) " +
+            (DB.Query("REPLACE INTO ProjectileBansOverride (WorldID, ProjectileBan, Whitelist) " +
                 "VALUES (@0, @1, @2);", Main.worldID, ID, Whitelist) > 0);
         public static bool AddTileBan(int ID, bool Whitelist) =>
-            (DB.Query("REPLACE INTO TileBansOverride (WorldID, TileBan, Type) " +
+            (DB.Query("REPLACE INTO TileBansOverride (WorldID, TileBan, Whitelist) " +
                 "VALUES (@0, @1, @2);", Main.worldID, ID, Whitelist) > 0);
 
         #endregion
