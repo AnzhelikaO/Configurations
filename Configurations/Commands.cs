@@ -50,7 +50,7 @@ namespace Configurations
                     }
                     else if (items.Count > 1)
                     {
-                        TShock.Utils.SendMultipleMatchError(args.Player, items.Select(i => $"{i.Name}({i.netID})"));
+                        args.Player.SendMultipleMatchError(items.Select(i => $"{i.Name}({i.netID})"));
                         return;
                     }
 
@@ -98,7 +98,7 @@ namespace Configurations
                     }
                     else if (items.Count > 1)
                     {
-                        TShock.Utils.SendMultipleMatchError(args.Player, items.Select(i => $"{i.Name}({i.netID})"));
+                        args.Player.SendMultipleMatchError(items.Select(i => $"{i.Name}({i.netID})"));
                         return;
                     }
 
