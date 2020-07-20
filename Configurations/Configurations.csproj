@@ -70,6 +70,7 @@
     <Compile Include="Commands.cs" />
     <Compile Include="Configurations.cs" />
     <Compile Include="Database.cs" />
+    <Compile Include="Overrides.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
