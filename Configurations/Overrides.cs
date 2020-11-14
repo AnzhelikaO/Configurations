@@ -3,7 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using TShockAPI;
 using TShockAPI.DB;
 using TShockAPI.Localization;
@@ -26,7 +25,7 @@ namespace Configurations
             lock (Locker)
             {
                 (Groups, ItemBans, ProjectileBans, TileBans) = Database.LoadConfiguration();
-                TShock.Itembans.ItemBans.RemoveAll(b => (b is ItemBanOverride));
+                TShock.ItemBans.DataModel.ItemBans.RemoveAll(b => (b is ItemBanOverride));
                 foreach (var pair in ItemBans)
                     OverrideItemBan(pair.Key);
                 TShock.ProjectileBans.ProjectileBans.RemoveAll(b => (b is ProjectileBanOverride));
@@ -38,27 +37,6 @@ namespace Configurations
             }
         }
 
-        #region ItemManager
-
-        private static ItemManager _ItemManager;
-        private static ItemManager ItemManager
-        {
-            get
-            {
-                if (_ItemManager == null)
-                {
-                    BindingFlags flags = (BindingFlags.Instance | BindingFlags.NonPublic);
-                    object itemBans = typeof(TShock).GetField("ItemBans", flags)
-                                                    .GetValue(TShock.instance);
-                    _ItemManager = (ItemManager)itemBans.GetType()
-                                                        .GetField("DataModel", flags)
-                                                        .GetValue(itemBans);
-                }
-                return _ItemManager;
-            }
-        }
-
-        #endregion
         #region OverrideBan
 
         public static void OverrideItemBan(int ID, bool Whitelist)
@@ -73,11 +51,10 @@ namespace Configurations
         private static void OverrideItemBan(int ID)
         {
             string name = TShock.Utils.GetItemById(ID).Name;
-            if (!ItemManager.ItemBans.Any(b => (b.Name == name)))
+            if (!TShock.ItemBans.DataModel.ItemBans.Any(b => (b.Name == name)))
             {
                 ItemBanOverride itemBanOverride = new ItemBanOverride(name);
-                ItemManager.ItemBans.Add(itemBanOverride);
-                TShock.Itembans.ItemBans.Add(itemBanOverride);
+                TShock.ItemBans.DataModel.ItemBans.Add(itemBanOverride);
             }
         }
 
@@ -119,13 +96,12 @@ namespace Configurations
             lock (Locker)
             {
                 string name = EnglishLanguage.GetItemNameById(ID);
-                Banned = ItemManager.ItemBans.Any(b => (!(b is ItemBanOverride) && (b.Name == name)));
+                Banned = TShock.ItemBans.DataModel.ItemBans.Any(b =>
+                    (!(b is ItemBanOverride) && (b.Name == name)));
                 if (ItemBans.TryRemove(ID, out Whitelist))
                 {
                     Database.RemoveItemBan(ID);
-                    TShock.Itembans.ItemBans.RemoveAll(b =>
-                        ((b is ItemBanOverride @override) && (@override.Name == name)));
-                    ItemManager.ItemBans.RemoveAll(b =>
+                    TShock.ItemBans.DataModel.ItemBans.RemoveAll(b =>
                         ((b is ItemBanOverride @override) && (@override.Name == name)));
                     return true;
                 }
@@ -175,7 +151,7 @@ namespace Configurations
                 if (Locally = ItemBans.TryGetValue(ID, out bool banned))
                     return banned;
                 string name = EnglishLanguage.GetItemNameById(ID);
-                return ItemManager.ItemBans.Any(b => (b.Name == name));
+                return TShock.ItemBans.DataModel.ItemBans.Any(b => (b.Name == name));
             }
         }
         public static bool IsBannedProjectile(int ID, out bool Locally)
