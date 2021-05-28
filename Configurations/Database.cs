@@ -22,18 +22,18 @@ namespace Configurations
         {
             #region DB
 
-            switch (TShock.Config.StorageType.ToLower())
+            switch (TShock.Config.Settings.StorageType.ToLower())
             {
                 case "mysql":
                     MySQL = true;
-                    string[] host = TShock.Config.MySqlHost.Split(':');
+                    string[] host = TShock.Config.Settings.MySqlHost.Split(':');
                     DB = new MySqlConnection()
                     {
                         ConnectionString = $"Server={host[0]}; " +
                                            $"Port={(host.Length == 1 ? "3306" : host[1])}; " +
-                                           $"Database={TShock.Config.MySqlDbName}; " +
-                                           $"Uid={TShock.Config.MySqlUsername}; " +
-                                           $"Pwd={TShock.Config.MySqlPassword};"
+                                           $"Database={TShock.Config.Settings.MySqlDbName}; " +
+                                           $"Uid={TShock.Config.Settings.MySqlUsername}; " +
+                                           $"Pwd={TShock.Config.Settings.MySqlPassword};"
                     };
                     break;
                 case "sqlite":

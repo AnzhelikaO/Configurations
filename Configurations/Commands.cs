@@ -37,7 +37,7 @@ namespace Configurations
                 {
                     if ((args.Parameters.Count < 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "witemban <add/+> <Item Name or ID> <whitelist/w/blacklist/b>");
                         return;
                     }
@@ -79,7 +79,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count < 2)
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "witemban <delete/-> <Item Name or ID>");
                         return;
                     }
@@ -128,7 +128,7 @@ namespace Configurations
                         {
                             HeaderFormat = "World Item bans in the current world ({0}/{1}):",
                             FooterFormat =
-                                $"Type {TShock.Config.CommandSpecifier}witemban <list/l> {{0}} for more.",
+                                $"Type {TShock.Config.Settings.CommandSpecifier}witemban <list/l> {{0}} for more.",
                             NothingToDisplayString =
                                 "There are currently no banned items in the current world."
                         });
@@ -167,7 +167,7 @@ namespace Configurations
                 {
                     if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wprojban <add/+> <Projectile ID> <whitelist/w/blacklist/b>");
                         return;
                     }
@@ -201,7 +201,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wprojban <delete/-> <Projectile ID>");
                         return;
                     }
@@ -238,7 +238,7 @@ namespace Configurations
                         {
                             HeaderFormat = "Projectile bans in the current world ({0}/{1}):",
                             FooterFormat =
-                                $"Type {TShock.Config.CommandSpecifier}wprojban <list/l> {{0}} for more.",
+                                $"Type {TShock.Config.Settings.CommandSpecifier}wprojban <list/l> {{0}} for more.",
                             NothingToDisplayString =
                                 "There are currently no banned projectiles in the current world."
                         });
@@ -277,7 +277,7 @@ namespace Configurations
                 {
                     if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wtileban <add/+> <Tile ID> <whitelist/w/blacklist/b>");
                         return;
                     }
@@ -309,7 +309,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wtileban <delete/-> <Tile ID>");
                         return;
                     }
@@ -345,7 +345,7 @@ namespace Configurations
                         {
                             HeaderFormat = "Tile bans in the current world ({0}/{1}):",
                             FooterFormat =
-                                $"Type {TShock.Config.CommandSpecifier}wtileban <list/l> {{0}} for more.",
+                                $"Type {TShock.Config.Settings.CommandSpecifier}wtileban <list/l> {{0}} for more.",
                             NothingToDisplayString =
                                 "There are currently no banned tiles in the current world."
                         });
