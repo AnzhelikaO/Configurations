@@ -1,5 +1,5 @@
 ﻿#region Using
-using Mono.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using MySql.Data.MySqlClient;
 using System.Collections.Generic;
 using System.Data;
@@ -21,22 +21,27 @@ namespace Configurations
         {
             #region DB
 
-            switch (TShock.Config.StorageType.ToLower())
+            switch (TShock.Config.Settings.StorageType.ToLower())
             {
                 case "mysql":
-                    string[] host = TShock.Config.MySqlHost.Split(':');
+                    string[] host = TShock.Config.Settings.MySqlHost.Split(':');
                     DB = new MySqlConnection()
                     {
                         ConnectionString = $"Server={host[0]}; " +
                                            $"Port={(host.Length == 1 ? "3306" : host[1])}; " +
-                                           $"Database={TShock.Config.MySqlDbName}; " +
-                                           $"Uid={TShock.Config.MySqlUsername}; " +
-                                           $"Pwd={TShock.Config.MySqlPassword};"
+                                           $"Database={TShock.Config.Settings.MySqlDbName}; " +
+                                           $"Uid={TShock.Config.Settings.MySqlUsername}; " +
+                                           $"Pwd={TShock.Config.Settings.MySqlPassword};"
                     };
                     break;
                 case "sqlite":
                     string path = Path.Combine(TShock.SavePath, "Configurations.sqlite");
-                    DB = new SqliteConnection($"uri=file://{path},Version=3");
+                    DB = new SqliteConnection(
+                        new SqliteConnectionStringBuilder()
+                        {
+                            DataSource = path
+                        }.ToString()
+                    );
                     break;
             }
 
@@ -122,9 +127,9 @@ CREATE TABLE IF NOT EXISTS TileBansOverride
                             continue;
                         string name = EnglishLanguage.GetItemNameById(item);
                         if (itemBans.Get<bool>("Whitelist"))
-                            TShock.Itembans.ItemBans.RemoveAll(i => (i.Name == name));
-                        else if (!TShock.Itembans.ItemBans.Any(i => (i.Name == name)))
-                            TShock.Itembans.ItemBans.Add(new ItemBan(name));
+                            TShock.ItemBans.DataModel.ItemBans.RemoveAll(i => (i.Name == name));
+                        else if (!TShock.ItemBans.DataModel.ItemBans.Any(i => (i.Name == name)))
+                            TShock.ItemBans.DataModel.ItemBans.Add(new ItemBan(name));
                     }
             }
             catch { }
