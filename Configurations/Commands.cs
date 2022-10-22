@@ -37,7 +37,7 @@ namespace Configurations
                 {
                     if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "witemban add <item name or id> <whitelist/w/blacklist/b>");
                         return;
                     }
@@ -55,21 +55,21 @@ namespace Configurations
                     }
 
                     string name = items[0].Name;
-                    if (whitelist && TShock.Itembans.ItemBans.Any(b => (b.Name == name)))
+                    if (whitelist && TShock.ItemBans.DataModel.ItemBans.Any(b => (b.Name == name)))
                     {
                         if (Database.AddItemBan(items[0].netID, true))
                         {
-                            TShock.Itembans.ItemBans.RemoveAll(b => (b.Name == name));
+                            TShock.ItemBans.DataModel.ItemBans.RemoveAll(b => (b.Name == name));
                             args.Player.SendSuccessMessage($"Unbanned item {name} on current world.");
                         }
                         else
                             args.Player.SendErrorMessage($"Item {name} is not banned on current world.");
                     }
-                    else if (!whitelist && !TShock.Itembans.ItemBans.Any(b => (b.Name == name)))
+                    else if (!whitelist && !TShock.ItemBans.DataModel.ItemBans.Any(b => (b.Name == name)))
                     {
                         if (Database.AddItemBan(items[0].netID, false))
                         {
-                            TShock.Itembans.ItemBans.Add(new ItemBan(name));
+                            TShock.ItemBans.DataModel.ItemBans.Add(new ItemBan(name));
                             args.Player.SendSuccessMessage($"Banned item {name} on current world.");
                         }
                         else
@@ -85,7 +85,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "witemban del <item name name or id>");
                         return;
                     }
@@ -107,12 +107,12 @@ namespace Configurations
                     {
                         if (whitelist)
                         {
-                            TShock.Itembans.ItemBans.Add(new ItemBan(name));
+                            TShock.ItemBans.DataModel.ItemBans.Add(new ItemBan(name));
                             args.Player.SendSuccessMessage($"Banned item {name}.");
                         }
                         else
                         {
-                            TShock.Itembans.ItemBans.RemoveAll(b => (b.Name == name));
+                            TShock.ItemBans.DataModel.ItemBans.RemoveAll(b => (b.Name == name));
                             args.Player.SendSuccessMessage($"Unbanned item {name}.");
                         }
                     }
@@ -137,7 +137,7 @@ namespace Configurations
                         new PaginationTools.Settings
                         {
                             HeaderFormat = "World Item bans on current world ({0}/{1}):",
-                            FooterFormat = $"Type {TShock.Config.CommandSpecifier}witemban list {{0}} for more.",
+                            FooterFormat = $"Type {TShock.Config.Settings.CommandSpecifier}witemban list {{0}} for more.",
                             NothingToDisplayString = "There are currently no banned items on current world."
                         });
                     return;
@@ -164,7 +164,7 @@ namespace Configurations
                 {
                     if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wprojban add <proj id> <whitelist/w/blacklist/b>");
                         return;
                     }
@@ -205,7 +205,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wprojban del <id>");
                         return;
                     }
@@ -246,7 +246,7 @@ namespace Configurations
                         new PaginationTools.Settings
                         {
                             HeaderFormat = "Projectile bans on current world ({0}/{1}):",
-                            FooterFormat = $"Type {TShock.Config.CommandSpecifier}wprojban list {{0}} for more.",
+                            FooterFormat = $"Type {TShock.Config.Settings.CommandSpecifier}wprojban list {{0}} for more.",
                             NothingToDisplayString = "There are currently no banned projectiles on current world."
                         });
                     return;
@@ -273,7 +273,7 @@ namespace Configurations
                 {
                     if ((args.Parameters.Count != 3) || !GetType(args, out bool whitelist))
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wtileban add <tile id> <whitelist/w/blacklist/b>");
                         return;
                     }
@@ -315,7 +315,7 @@ namespace Configurations
                 {
                     if (args.Parameters.Count != 2)
                     {
-                        args.Player.SendErrorMessage(TShock.Config.CommandSpecifier +
+                        args.Player.SendErrorMessage(TShock.Config.Settings.CommandSpecifier +
                             "wtileban del <id>");
                         return;
                     }
@@ -357,7 +357,7 @@ namespace Configurations
                         new PaginationTools.Settings
                         {
                             HeaderFormat = "Tile bans on current world ({0}/{1}):",
-                            FooterFormat = $"Type {TShock.Config.CommandSpecifier}wtileban list {{0}} for more.",
+                            FooterFormat = $"Type {TShock.Config.Settings.CommandSpecifier}wtileban list {{0}} for more.",
                             NothingToDisplayString = "There are currently no banned tiles on current world."
                         });
                     return;
